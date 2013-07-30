@@ -1,13 +1,18 @@
+require_relative '../../lib/filter_by.rb'
+require_relative '../../lib/filter_cache.rb'
+
 class MoviesController < ApplicationController
 
   def show
-    id = params[:id] # retrieve movie ID from URI route
-    @movie = Movie.find(id) # look up movie by unique ID
-    # will render app/views/movies/show.<extension> by default
+    id = params[:id]
+    @movie = Movie.find(id)
   end
 
   def index
-    @movies = Movie.all
+    @sort_column = Movie.column_names.include?(cache.load(:order_by)) ? cache.load(:order_by) : "id"
+    @filter = FilterBy.new(Movie)
+    @movies = @filter.rating(cache.load(:ratings)).order(@sort_column)
+    @all_ratings = Movie.ratings
   end
 
   def new
@@ -36,6 +41,14 @@ class MoviesController < ApplicationController
     @movie.destroy
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
+  end
+
+  private
+
+  def cache
+    cache = FilterCache.new(session)
+    cache.save(params)
+    cache
   end
 
 end
