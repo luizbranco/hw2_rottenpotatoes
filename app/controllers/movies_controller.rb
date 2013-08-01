@@ -2,6 +2,7 @@ require_relative '../../lib/filter_by.rb'
 require_relative '../../lib/filter_cache.rb'
 
 class MoviesController < ApplicationController
+  before_filter :restful_redirect, only: :index
 
   def show
     id = params[:id]
@@ -49,6 +50,16 @@ class MoviesController < ApplicationController
     cache = FilterCache.new(session)
     cache.save(params)
     cache
+  end
+
+  def restful_redirect
+    s, p = session, params
+    if s[:order_by] && !p[:order_by]
+      redirect_to movies_path(order_by: s[:order_by], ratings: (p[:ratings] || s[:ratings]))
+    elsif s[:ratings] && !p[:ratings]
+      redirect_to movies_path(order_by: (p[:order_by] || s[:order_by]), ratings: s[:ratings])
+    end
+    return
   end
 
 end
